@@ -10,12 +10,11 @@ Data is sourced from my other project [QLD_fuel_scraping](https://github.com/gsa
 ## Install
 
 ### Poetry
-
-First you need to install `poetry`. For this project I use version `1.4.0`
+First, you need to install `poetry`. For this project, I use version `1.4.0`
 
 https://python-poetry.org/docs/#installation
 
-Remeber to add poetry to your path.
+Remember to add poetry to your path.
 
 `export PATH="/home/[user]/.local/bin:$PATH"`
 
@@ -25,8 +24,7 @@ Remeber to add poetry to your path.
 
 ### 
 
-## App overview
-
+## App Overview
 ```mermaid
 flowchart LR
 
@@ -50,7 +48,7 @@ end
 ```
 
 ### todo
-- [x] ingest data from csv to GCS in parquet format
+
 - [ ] create external tables in BigQuery
 - [ ] create dbt models
 - [ ] deploy web app
@@ -60,3 +58,14 @@ end
 
 
 ## done
+- [x] ingest data from CSV to GCS in parquet format
+
+
+
+## next
+- [x] ingest data from CSV to GCS in parquet format
+    - [ ] join into one file before uploading? partition it by some value? use DuckDB?
+        - compare speeds
+        - parquet optimization: avoid many small files
+        - could do this with github action in the scraping repo
+        - upload in a asynchronous way
