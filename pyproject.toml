@@ -8,9 +8,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.gcp.dependencies]
+gcsfs = "^2023.3.0"
 
 [tool.poetry.group.ingestion.dependencies]
 pandas = "^1.5.3"
+pyarrow = "^11.0.0"
+fsspec = "^2023.3.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
@@ -18,6 +22,7 @@ ruff = "^0.0.228"
 pytest = "^7.2.1"
 ipykernel = "^6.20.2"
 mypy = "^0.991"
+chardet = "^5.1.0"
 
 
 [build-system]
@@ -52,5 +57,5 @@ select = [
     "E",
     "W",
     # isort
-    "I001"
+    "I"
 ]

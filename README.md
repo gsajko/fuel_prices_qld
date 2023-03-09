@@ -50,10 +50,13 @@ end
 ```
 
 ### todo
-- [ ] ingest data from csv to GCS in parquet format
+- [x] ingest data from csv to GCS in parquet format
 - [ ] create external tables in BigQuery
 - [ ] create dbt models
 - [ ] deploy web app
 
 ---
 - [ ] use terraform to create GCP resources
+
+
+## done
