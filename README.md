@@ -48,7 +48,7 @@ end
 ```
 
 ### todo
-
+- [ ] create config file
 - [ ] create external tables in BigQuery
 - [ ] create dbt models
 - [ ] deploy web app
@@ -64,6 +64,7 @@ end
 
 ## next
 - [x] ingest data from CSV to GCS in parquet format
+    - [ ] upload directly from pandas to GCS
     - [ ] join into one file before uploading? partition it by some value? use DuckDB?
         - compare speeds
         - parquet optimization: avoid many small files
