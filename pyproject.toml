@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 
 [tool.poetry.group.gcp.dependencies]
+google-cloud-bigquery = "^3.6.0"
 gcsfs = "^2023.3.0"
 
 [tool.poetry.group.ingestion.dependencies]
