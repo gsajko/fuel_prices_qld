@@ -102,7 +102,7 @@ class GcsUploader:
             df.columns = [x.lower() for x in df.columns]
             # set type of date columns
             df["transactiondateutc"] = pd.to_datetime(df["transactiondateutc"])
-            
+
             dest_file_name = f"{file_name}.parquet"
             dest_file_path = os.path.join(self.project_dir, "tmp", dest_file_name)
             df.to_parquet(dest_file_path)

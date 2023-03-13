@@ -49,7 +49,6 @@ end
 
 ### todo
 - [ ] create config file
-- [ ] create external tables in BigQuery
 - [ ] create dbt models
 - [ ] deploy web app
 
@@ -59,7 +58,7 @@ end
 
 ## done
 - [x] ingest data from CSV to GCS in parquet format
-
+- [x] create external tables in BigQuery
 
 
 ## next
