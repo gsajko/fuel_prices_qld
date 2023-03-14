@@ -8,6 +8,10 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.dbt.dependencies]
+dbt-core = "^1.4.5"
+dbt-bigquery = "^1.4.2"
+
 [tool.poetry.group.gcp.dependencies]
 google-cloud-bigquery = "^3.6.0"
 gcsfs = "^2023.3.0"

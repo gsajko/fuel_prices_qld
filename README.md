@@ -49,7 +49,7 @@ end
 
 ### todo
 - [ ] create config file
-- [ ] create dbt models
+- [ ] make transforms using dbt cloud
 - [ ] deploy web app
 
 ---
@@ -69,3 +69,4 @@ end
         - parquet optimization: avoid many small files
         - could do this with github action in the scraping repo
         - upload in a asynchronous way
+- [ ] make transforms using dbt core
