@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+    - name: staging
+      database: dotted-tube-376010 # this is the project name
+      schema: fuel_qld # this is the dataset name
+
+      tables:
+        - name: external_fuel_week
+        - name: external_fuel_month
