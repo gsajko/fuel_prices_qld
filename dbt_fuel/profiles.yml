@@ -1,0 +1,14 @@
+dbt_fuel:
+  outputs:
+    dev:
+      dataset: fuel_qld_dataset
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      keyfile: /home/sajo/key.json
+      location: EU
+      method: service-account
+      priority: interactive
+      project: dotted-tube-376010
+      threads: 4
+      type: bigquery
+  target: dev
