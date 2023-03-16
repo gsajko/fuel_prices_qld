@@ -1,4 +1,4 @@
-# %%|
+# %%
 from big_querry_utils import BigQueryManager, GcsUploader
 
 # %%
@@ -11,8 +11,15 @@ location_region = "EU"
 uploader = GcsUploader(project_dir, bucket_name, location_region)
 uploader.create_bucket()
 # TODO create bucket with Terraform instead
-uploader.upload_from_folders(["week", "month"])
-
+uploader.upload_from_folders(
+    folders=["week", "month"],
+    snapshot=True,
+    dataset_id=dataset_name,
+    location=location_region,
+    table_name="external_fuel_month",
+    bucket_name=bucket_name,
+)
+# uploader.upload_from_folders(folders=["week", "month"])
 # %%
 # Create external tables
 bq_manager = BigQueryManager(dataset_id=dataset_name, location=location_region)
@@ -27,3 +34,6 @@ bq_manager._create_dataset("dbt_gsajko", location_region)
 bq_manager._create_dataset("staging", location_region)
 bq_manager._create_dataset("production", location_region)
 # %%
+
+# SQL
+#

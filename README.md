@@ -10,19 +10,32 @@ Data is sourced from my other project [QLD_fuel_scraping](https://github.com/gsa
 ## Install
 
 ### Poetry
-First, you need to install `poetry`. For this project, I use version `1.4.0`
+First, you need to install `poetry`. For this project, I use version `1.3.2`
 
 https://python-poetry.org/docs/#installation
+`curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2`
 
 Remember to add poetry to your path.
 
 `export PATH="/home/[user]/.local/bin:$PATH"`
 
+
+### installing dagster
+There is a problem with installing dagster with poetry because of the `pendulum` package. The solution is to install it with `pip`.
+
+`pip install --no-build-isolation pendulum`.
+
+There could be error about `poetry`, in that case `poetry` needs to be installed first with `pip` as well. (`pip install poetry`)
+
+
 ### Init submodule
 
 ???
 
-### 
+### install dbt
+`export DBT_PROFILES_DIR=/home/sajo/fuel_prices_qld/dbt_fuel/config/`
+
+`export DBT_PROJECT_DIR=/home/sajo/fuel_prices_qld/dbt_fuel/`
 
 ## App Overview
 ```mermaid
@@ -39,10 +52,13 @@ gcs --> gbq[Google BigQuery]
 
 subgraph transform
 gbq --> dbt[dbt]
+dbt --> gbq
 end
 
+gbq --> serv
+
 subgraph serve
-dbt --> serv[web app]
+serv[web app]
 end
 
 ```

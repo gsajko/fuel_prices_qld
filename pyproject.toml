@@ -29,11 +29,9 @@ ipykernel = "^6.20.2"
 mypy = "^0.991"
 chardet = "^5.1.0"
 
-
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
 [tool.black]
 line-length = 88
 exclude = '''
@@ -64,3 +62,4 @@ select = [
     # isort
     "I"
 ]
+

@@ -2,6 +2,7 @@
 import glob
 import os
 import shutil
+import subprocess
 
 import pandas as pd
 from google.api_core.exceptions import Conflict, PreconditionFailed
@@ -11,6 +12,8 @@ from google.cloud import bigquery, storage
 key_file_path = "/home/sajo/key.json"
 # Set the environment variable
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file_path
+
+
 
 
 class BigQueryManager:
@@ -114,16 +117,53 @@ class GcsUploader:
         except PreconditionFailed:
             print(f"File {file} already exists in {dest_folder} folder")
 
-    def upload_from_folders(self, folders):
+    def upload_from_folders(self, folders, snapshot=False, **kwargs):
         os.makedirs(os.path.join(self.project_dir, "tmp"), exist_ok=True)
         for folder in folders:
             src_folder = os.path.join(self.project_dir, "data/data", folder)
             os.chdir(src_folder)
             extension = "csv"
             all_filenames = [i for i in glob.glob("*.{}".format(extension))]
-            # create tmp folder
-            for file in all_filenames:
-                print(f"uploading: {file}")
-                self.save_to_gcs(src_folder=src_folder, file=file, dest_folder=folder)
+            # sort files
+            all_filenames.sort()
+            # snapshot
+            if folder == "month" and snapshot is True:
+                for file in all_filenames:
+                    print(f"uploading: {file}")
+                    self.save_to_gcs(
+                        src_folder=src_folder, file=file, dest_folder=folder
+                    )
+                    # create ext table
+                    bq_manager = BigQueryManager(
+                        dataset_id=kwargs["dataset_id"], location=kwargs["location"]
+                    )
+                    bq_manager.create_ext_table_from_parquet(
+                        bucket=kwargs["bucket_name"],
+                        path=folder,
+                        table_name=kwargs["table_name"],
+                    )
+                    DBT_PROFILES_DIR ='/home/sajo/fuel_prices_qld/dbt_fuel/config'
+                    DBT_PROJECT_DIR ='/home/sajo/fuel_prices_qld/dbt_fuel'
+                    dbt_command = f"dbt snapshot --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
+                    try:
+                        result = subprocess.run(
+                            dbt_command,
+                            shell=True,
+                            check=True,
+                            capture_output=True,
+                            text=True,
+                        )
+                    except subprocess.CalledProcessError as e:
+                        print(e.stderr)
+                        print(e.stdout)
+                    print(result.stdout)
+
+            else:
+                for file in all_filenames:
+                    print(f"uploading: {file}")
+                    self.save_to_gcs(
+                        src_folder=src_folder, file=file, dest_folder=folder
+                    )
+
         # Remove all files and subdirectories inside tmp directory
         shutil.rmtree(os.path.join(self.project_dir, "tmp"))
