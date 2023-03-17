@@ -41,13 +41,24 @@ There could be error about `poetry`, in that case `poetry` needs to be installed
 ```mermaid
 flowchart LR
 
+
+
+subgraph ingest
 d1[csv monthly]
 d2[csv daily]
 
+end
 subgraph ingest
-d1 & d2 --> parquet --> gcs[Google Cloud Storage]
+
 end
 
+subgraph storage
+gcs[Google Cloud Storage]
+end
+d1 --parquet--> dbt1[dbt]
+dbt1[dbt] --snapshot--> gcs
+dbt1 
+d2--parquet--> gcs
 gcs --> gbq[Google BigQuery]
 
 subgraph transform
@@ -86,3 +97,17 @@ end
         - could do this with github action in the scraping repo
         - upload in a asynchronous way
 - [ ] make transforms using dbt core
+
+
+def upload_blob(self, source_file_name, destination_blob_name):
+    """Uploads a file to the bucket."""
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(self.bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    generation_match_precondition = 0
+    blob.upload_from_filename(
+        source_file_name, if_generation_match=generation_match_precondition
+    )
+    print(f"File {source_file_name} uploaded to {destination_blob_name}."
+
+upload to gcp bucket even if file exist but is different size

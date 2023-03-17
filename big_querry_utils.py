@@ -4,7 +4,7 @@ import shutil
 import subprocess
 
 import pandas as pd
-from google.api_core.exceptions import Conflict, PreconditionFailed
+from google.api_core.exceptions import Conflict
 from google.cloud import bigquery, storage
 
 # Set the absolute path to the key file
@@ -83,64 +83,65 @@ class GcsUploader:
         storage_client = storage.Client()
         bucket = storage_client.bucket(self.bucket_name)
         blob = bucket.blob(destination_blob_name)
-        generation_match_precondition = 0
-        blob.upload_from_filename(
-            source_file_name, if_generation_match=generation_match_precondition
-        )
+        if blob.exists() and blob.size != os.path.getsize(source_file_name):
+            print(f"File {source_file_name} already exists.")
+            return "skip"
+        blob.upload_from_filename(source_file_name)
         print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+        return "success"
 
     def save_to_gcs(self, src_folder, file, dest_folder):
+        date_column = ""
+        # Set the absolute path to the source file
+        src_file_path = os.path.join(src_folder, file)
+        if src_folder.split("/")[-1] == "month":
+            date_column = "TransactionDateutc"
+
+            def date_parser(x):
+                return pd.to_datetime(x, format="%d/%m/%Y %H:%M")
+
+        elif src_folder.split("/")[-1] == "week":
+            date_column = "TransactionDateUtc"
+
+            def date_parser(x):
+                return pd.to_datetime(x, format="%Y-%m-%d %H:%M")
+
+        else:
+            raise ValueError("Wrong src_folder")
+
         try:
-            date_column = ""
-            # Set the absolute path to the source file
-            src_file_path = os.path.join(src_folder, file)
-            if src_folder.split("/")[-1] == "month":
-                date_column = "TransactionDateutc"
-
-                def date_parser(x):
-                    return pd.to_datetime(x, format="%d/%m/%Y %H:%M")
-
-            elif src_folder.split("/")[-1] == "week":
-                date_column = "TransactionDateUtc"
-
-                def date_parser(x):
-                    return pd.to_datetime(x, format="%Y-%m-%d %H:%M")
-
-            else:
-                raise ValueError("Wrong src_folder")
-
-            try:
-                df = pd.read_csv(
-                    src_file_path,
-                    parse_dates=[date_column],
-                    date_parser=date_parser,
-                )
-            except UnicodeDecodeError:
-                df = pd.read_csv(
-                    src_file_path,
-                    parse_dates=[date_column],
-                    date_parser=date_parser,
-                    encoding="Windows-1252",
-                )
-            # save to tmp folder
-            file_name = file.split(".")[0]
-            # lower column names
-            df.columns = [x.lower() for x in df.columns]
-            dest_file_name = f"{file_name}.parquet"
-            dest_file_path = os.path.join(self.project_dir, "tmp", dest_file_name)
-            df.to_parquet(dest_file_path)
-            # upload to GCS
-            dest_blob_name = f"{dest_folder}/{dest_file_name}"
-            self.upload_blob(dest_file_path, dest_blob_name)
-        except PreconditionFailed:
-            print(f"File {file} already exists in {dest_folder} folder")
+            df = pd.read_csv(
+                src_file_path,
+                parse_dates=[date_column],
+                date_parser=date_parser,
+            )
+        except UnicodeDecodeError:
+            df = pd.read_csv(
+                src_file_path,
+                parse_dates=[date_column],
+                date_parser=date_parser,
+                encoding="Windows-1252",
+            )
+        # save to tmp folder
+        file_name = file.split(".")[0]
+        # lower column names
+        df.columns = [x.lower() for x in df.columns]
+        dest_file_name = f"{file_name}.parquet"
+        dest_file_path = os.path.join(self.project_dir, "tmp", dest_file_name)
+        df.to_parquet(dest_file_path)
+        # upload to GCS
+        dest_blob_name = f"{dest_folder}/{dest_file_name}"
+        results = self.upload_blob(dest_file_path, dest_blob_name)
+        return results
 
     def upload_monthly_files(self, files, snapshot=False):
         for file in files:
             print(f"uploading: {file}")
             src_folder = os.path.join(self.project_dir, "data/data/month")
-            self.save_to_gcs(src_folder=src_folder, file=file, dest_folder="month")
-            if snapshot:
+            results = self.save_to_gcs(
+                src_folder=src_folder, file=file, dest_folder="month"
+            )
+            if snapshot and results == "success":
                 bq_manager = BigQueryManager(
                     dataset_id=self.dataset_name, location=self.location_region
                 )

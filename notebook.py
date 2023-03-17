@@ -1,31 +1,17 @@
 # %%
-import os
-
-import pandas as pd
+from big_querry_utils import GcsUploader
 
 # %%
-os.chdir("/home/sajo/fuel_prices_qld/data/data")
-file_name = "month/2023-01-jan-2023-fuel-prices-changes-only.csv"
-file_name_week = "week/22_52.csv"
+project_dir = "/home/sajo/fuel_prices_qld/"
+dataset_name = "fuel_qld"
+bucket_name = "230314fuelprice"
+location_region = "EU"
 
-
-df = pd.read_csv(file_name)
 # %%
-df
-# %%
-df = pd.read_csv(
-    file_name_week,
-    parse_dates=["TransactionDateutc"],
-    date_parser=lambda x: pd.to_datetime(x, format="%d/%m/%Y %H:%M"),
+uploader = GcsUploader(project_dir, bucket_name, location_region, dataset_name)
+uploader.save_to_gcs(
+    src_folder="data/data/month",
+    file="2018-12-queensland-fuel-prices-december-2018.csv",
+    dest_folder="month",
 )
-df
-
-# %%
-time_string = "2021-10-26T22:33:21.62"
-df = pd.read_csv(
-    file_name_week,
-    parse_dates=["TransactionDateUtc"],
-    date_parser=lambda x: pd.to_datetime(x, format="%Y-%m-%d %H:%M"),
-)
-df
 # %%
