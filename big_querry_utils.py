@@ -1,4 +1,3 @@
-# %%
 import glob
 import os
 import shutil
@@ -12,8 +11,6 @@ from google.cloud import bigquery, storage
 key_file_path = "/home/sajo/key.json"
 # Set the environment variable
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_file_path
-
-
 
 
 class BigQueryManager:
@@ -66,10 +63,11 @@ class BigQueryManager:
 
 
 class GcsUploader:
-    def __init__(self, project_dir, bucket_name, location_region):
+    def __init__(self, project_dir, bucket_name, location_region, dataset_name):
         self.project_dir = project_dir
         self.bucket_name = bucket_name
         self.location_region = location_region
+        self.dataset_name = dataset_name
 
     def create_bucket(self):
         try:
@@ -93,29 +91,89 @@ class GcsUploader:
 
     def save_to_gcs(self, src_folder, file, dest_folder):
         try:
+            date_column = ""
             # Set the absolute path to the source file
             src_file_path = os.path.join(src_folder, file)
+            if src_folder.split("/")[-1] == "month":
+                date_column = "TransactionDateutc"
+
+                def date_parser(x):
+                    return pd.to_datetime(x, format="%d/%m/%Y %H:%M")
+
+            elif src_folder.split("/")[-1] == "week":
+                date_column = "TransactionDateUtc"
+
+                def date_parser(x):
+                    return pd.to_datetime(x, format="%Y-%m-%d %H:%M")
+
+            else:
+                raise ValueError("Wrong src_folder")
+
             try:
-                df = pd.read_csv(src_file_path)
+                df = pd.read_csv(
+                    src_file_path,
+                    parse_dates=[date_column],
+                    date_parser=date_parser,
+                )
             except UnicodeDecodeError:
-                df = pd.read_csv(src_file_path, encoding="Windows-1252")
+                df = pd.read_csv(
+                    src_file_path,
+                    parse_dates=[date_column],
+                    date_parser=date_parser,
+                    encoding="Windows-1252",
+                )
             # save to tmp folder
             file_name = file.split(".")[0]
             # lower column names
             df.columns = [x.lower() for x in df.columns]
-            # set type of date columns
-            df["transactiondateutc"] = pd.to_datetime(df["transactiondateutc"])
-
             dest_file_name = f"{file_name}.parquet"
             dest_file_path = os.path.join(self.project_dir, "tmp", dest_file_name)
             df.to_parquet(dest_file_path)
             # upload to GCS
             dest_blob_name = f"{dest_folder}/{dest_file_name}"
             self.upload_blob(dest_file_path, dest_blob_name)
-            # remove tmp file
-            os.remove(dest_file_path)
         except PreconditionFailed:
             print(f"File {file} already exists in {dest_folder} folder")
+
+    def upload_monthly_files(self, files, snapshot=False):
+        for file in files:
+            print(f"uploading: {file}")
+            src_folder = os.path.join(self.project_dir, "data/data/month")
+            self.save_to_gcs(src_folder=src_folder, file=file, dest_folder="month")
+            if snapshot:
+                bq_manager = BigQueryManager(
+                    dataset_id=self.dataset_name, location=self.location_region
+                )
+                bq_manager.create_ext_table_from_parquet(
+                    bucket=self.bucket_name,
+                    path="month",
+                    table_name="external_fuel_month",
+                )
+                self.run_dbt_snapshot()
+
+    def upload_weekly_files(self, files):
+        for file in files:
+            print(f"uploading: {file}")
+            src_folder = os.path.join(self.project_dir, "data/data/week")
+            self.save_to_gcs(src_folder=src_folder, file=file, dest_folder="week")
+
+    def run_dbt_snapshot(self):
+        # TODO hardcoded paths
+        DBT_PROFILES_DIR = "/home/sajo/fuel_prices_qld/dbt_fuel/config"
+        DBT_PROJECT_DIR = "/home/sajo/fuel_prices_qld/dbt_fuel"
+        dbt_command = (
+            f"dbt snapshot --project-dir {DBT_PROJECT_DIR} "
+            f"--profiles-dir {DBT_PROFILES_DIR}"
+        )
+
+        try:
+            result = subprocess.run(
+                dbt_command, shell=True, check=True, capture_output=True, text=True
+            )
+            print(result.stdout)
+        except subprocess.CalledProcessError as e:
+            print(e.stderr)
+            print(e.stdout)
 
     def upload_from_folders(self, folders, snapshot=False, **kwargs):
         os.makedirs(os.path.join(self.project_dir, "tmp"), exist_ok=True)
@@ -127,43 +185,10 @@ class GcsUploader:
             # sort files
             all_filenames.sort()
             # snapshot
-            if folder == "month" and snapshot is True:
-                for file in all_filenames:
-                    print(f"uploading: {file}")
-                    self.save_to_gcs(
-                        src_folder=src_folder, file=file, dest_folder=folder
-                    )
-                    # create ext table
-                    bq_manager = BigQueryManager(
-                        dataset_id=kwargs["dataset_id"], location=kwargs["location"]
-                    )
-                    bq_manager.create_ext_table_from_parquet(
-                        bucket=kwargs["bucket_name"],
-                        path=folder,
-                        table_name=kwargs["table_name"],
-                    )
-                    DBT_PROFILES_DIR ='/home/sajo/fuel_prices_qld/dbt_fuel/config'
-                    DBT_PROJECT_DIR ='/home/sajo/fuel_prices_qld/dbt_fuel'
-                    dbt_command = f"dbt snapshot --project-dir {DBT_PROJECT_DIR} --profiles-dir {DBT_PROFILES_DIR}"
-                    try:
-                        result = subprocess.run(
-                            dbt_command,
-                            shell=True,
-                            check=True,
-                            capture_output=True,
-                            text=True,
-                        )
-                    except subprocess.CalledProcessError as e:
-                        print(e.stderr)
-                        print(e.stdout)
-                    print(result.stdout)
-
-            else:
-                for file in all_filenames:
-                    print(f"uploading: {file}")
-                    self.save_to_gcs(
-                        src_folder=src_folder, file=file, dest_folder=folder
-                    )
-
-        # Remove all files and subdirectories inside tmp directory
+            if folder == "month":
+                self.upload_monthly_files(
+                    files=all_filenames, snapshot=snapshot, **kwargs
+                )
+            if folder == "week":
+                self.upload_weekly_files(files=all_filenames)
         shutil.rmtree(os.path.join(self.project_dir, "tmp"))

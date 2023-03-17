@@ -8,18 +8,10 @@ bucket_name = "230314fuelprice"
 location_region = "EU"
 # %%
 # upload data from repo to GCS bucket
-uploader = GcsUploader(project_dir, bucket_name, location_region)
+uploader = GcsUploader(project_dir, bucket_name, location_region, dataset_name)
 uploader.create_bucket()
 # TODO create bucket with Terraform instead
-uploader.upload_from_folders(
-    folders=["week", "month"],
-    snapshot=True,
-    dataset_id=dataset_name,
-    location=location_region,
-    table_name="external_fuel_month",
-    bucket_name=bucket_name,
-)
-# uploader.upload_from_folders(folders=["week", "month"])
+uploader.upload_from_folders(folders=["week", "month"], snapshot=True)
 # %%
 # Create external tables
 bq_manager = BigQueryManager(dataset_id=dataset_name, location=location_region)
