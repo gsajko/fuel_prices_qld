@@ -35,7 +35,10 @@ There could be error about `poetry`, in that case `poetry` needs to be installed
 ### install dbt
 `export DBT_PROFILES_DIR=/home/sajo/fuel_prices_qld/dbt_fuel/config/`
 
-`export DBT_PROJECT_DIR=/home/sajo/fuel_prices_qld/dbt_fuel/`
+~~`export DBT_PROJECT_DIR=/home/sajo/fuel_prices_qld/dbt_fuel/`~~
+
+`export DBT_PROJECT_DIR` not working in dbt 1.4.5! use `--project-dir /home/sajo/fuel_prices_qld/dbt_fuel` instead
+
 
 ## App Overview
 ```mermaid

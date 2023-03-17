@@ -15,7 +15,7 @@ lint: ## Run the code linter.
 
 
 style:
-	black .
+	black -l 88 .
 	ruff ./ --fix
 	@echo "The style pass! ✨ 🍰 ✨"	
 

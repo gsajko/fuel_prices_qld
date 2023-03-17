@@ -83,12 +83,15 @@ class GcsUploader:
         storage_client = storage.Client()
         bucket = storage_client.bucket(self.bucket_name)
         blob = bucket.blob(destination_blob_name)
-        if blob.exists() and blob.size != os.path.getsize(source_file_name):
+        if blob.exists() and bucket.get_blob(
+            destination_blob_name
+        ).size == os.path.getsize(source_file_name):
             print(f"File {source_file_name} already exists.")
             return "skip"
-        blob.upload_from_filename(source_file_name)
-        print(f"File {source_file_name} uploaded to {destination_blob_name}.")
-        return "success"
+        else:
+            blob.upload_from_filename(source_file_name)
+            print(f"File {source_file_name} uploaded to {destination_blob_name}.")
+            return "success"
 
     def save_to_gcs(self, src_folder, file, dest_folder):
         date_column = ""
