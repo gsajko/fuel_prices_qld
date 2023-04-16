@@ -39,6 +39,15 @@ There could be error about `poetry`, in that case `poetry` needs to be installed
 
 `export DBT_PROJECT_DIR` not working in dbt 1.4.5! use `--project-dir /home/sajo/fuel_prices_qld/dbt_fuel` instead
 
+#### dbt use:
+
+must inculde `--project-dir` and `--profiles-dir` flags
+
+for example:
+
+`dbt test  --project-dir /home/sajo/fuel_prices_qld/dbt_fuel --profiles-dir /home/sajo/fuel_prices_qld/dbt_fuel/config`
+
+
 
 ## App Overview
 ```mermaid
@@ -58,10 +67,11 @@ end
 subgraph storage
 gcs[Google Cloud Storage]
 end
-d1 --parquet--> dbt1[dbt]
+d1 --> station_data --parquet--> dbt1[dbt]
+d1 --> p1[price_data] --parquet--> gcs
 dbt1[dbt] --snapshot--> gcs
 dbt1 
-d2--parquet--> gcs
+d2 --> p2[price_data] --parquet--> gcs
 gcs --> gbq[Google BigQuery]
 
 subgraph transform
@@ -100,17 +110,3 @@ end
         - could do this with github action in the scraping repo
         - upload in a asynchronous way
 - [ ] make transforms using dbt core
-
-
-def upload_blob(self, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(self.bucket_name)
-    blob = bucket.blob(destination_blob_name)
-    generation_match_precondition = 0
-    blob.upload_from_filename(
-        source_file_name, if_generation_match=generation_match_precondition
-    )
-    print(f"File {source_file_name} uploaded to {destination_blob_name}."
-
-upload to gcp bucket even if file exist but is different size

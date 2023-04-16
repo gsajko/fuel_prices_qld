@@ -4,7 +4,7 @@
         target_schema = 'snapshots',
         strategy = 'check',
         updated_at = 'transactiondateutc',
-        check_cols = ['site_name', 'site_brand', 'sites_address_line_1', 'site_suburb', 'site_state', 'site_post_code', 'site_latitude', 'site_longitude'],
+        check_cols = ['site_name', 'site_brand'],
     ) }}
 
 SELECT
