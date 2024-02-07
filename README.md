@@ -20,7 +20,8 @@ Remember to add poetry to your path.
 
 ### Init submodule
 
-???
+`git submodule init`
+`git submodule update`
 
 ### 
 
@@ -48,13 +49,15 @@ end
 ```
 
 ### todo
+- [ ] use terraform to create GCP resources
+- [ ] dockerize the app
+
+---
+
+
 - [ ] create config file
 - [ ] create dbt models
 - [ ] deploy web app
-
----
-- [ ] use terraform to create GCP resources
-
 
 ## done
 - [x] ingest data from CSV to GCS in parquet format
